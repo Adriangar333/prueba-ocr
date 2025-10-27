@@ -423,23 +423,24 @@ const App: React.FC = () => {
     }
 
     const dataToExport = imagesToExport.map(image => {
-      const bestPrediction = image.extractedResult?.predictions?.sort((a, b) => b.confidence - a.confidence)[0];
-      const tipo = bestPrediction ? extractTipoFromLabel(bestPrediction.class) : 'N/A';
-      const watts = bestPrediction ? extractWattsFromLabel(bestPrediction.class) : 'N/A';
-
-      const predictionDetails = image.extractedResult?.predictions
-        ?.sort((a, b) => b.confidence - a.confidence)
-        .map(p => `${p.class} (${(p.confidence * 100).toFixed(1)}%)`)
-        .join(', ');
-
-      return {
+      const baseData: { [key: string]: any } = {
         'Nombre de Archivo': image.file.name,
         'Codigo Extraido': image.extractedResult?.extractedCode || 'N/A',
-        'Tipo de Iluminaria (sugerido)': tipo,
-        'Watts (sugerido)': watts,
-        'Detalles de Prediccion': predictionDetails || 'N/A',
         'Status': image.status,
       };
+
+      const sortedPredictions = image.extractedResult?.predictions?.sort((a, b) => b.confidence - a.confidence) || [];
+      
+      const bestPrediction = sortedPredictions[0];
+      baseData['Tipo de Iluminaria (sugerido)'] = bestPrediction ? extractTipoFromLabel(bestPrediction.class) : 'N/A';
+      baseData['Watts (sugerido)'] = bestPrediction ? extractWattsFromLabel(bestPrediction.class) : 'N/A';
+
+      sortedPredictions.forEach((prediction, index) => {
+        baseData[`Prediccion ${index + 1}`] = prediction.class;
+        baseData[`Confianza ${index + 1}`] = `${(prediction.confidence * 100).toFixed(1)}%`;
+      });
+
+      return baseData;
     });
 
     const ws = XLSX.utils.json_to_sheet(dataToExport);
