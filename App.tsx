@@ -427,11 +427,17 @@ const App: React.FC = () => {
       const tipo = bestPrediction ? extractTipoFromLabel(bestPrediction.class) : 'N/A';
       const watts = bestPrediction ? extractWattsFromLabel(bestPrediction.class) : 'N/A';
 
+      const predictionDetails = image.extractedResult?.predictions
+        ?.sort((a, b) => b.confidence - a.confidence)
+        .map(p => `${p.class} (${(p.confidence * 100).toFixed(1)}%)`)
+        .join(', ');
+
       return {
         'Nombre de Archivo': image.file.name,
         'Codigo Extraido': image.extractedResult?.extractedCode || 'N/A',
         'Tipo de Iluminaria (sugerido)': tipo,
         'Watts (sugerido)': watts,
+        'Detalles de Prediccion': predictionDetails || 'N/A',
         'Status': image.status,
       };
     });
