@@ -429,7 +429,9 @@ const App: React.FC = () => {
         'Status': image.status,
       };
 
-      const sortedPredictions = image.extractedResult?.predictions?.sort((a, b) => b.confidence - a.confidence) || [];
+      const allPredictions = image.extractedResult?.predictions || [];
+      const filteredPredictions = allPredictions.filter(p => !/^\d$/.test(p.class));
+      const sortedPredictions = filteredPredictions.sort((a, b) => b.confidence - a.confidence);
       
       const bestPrediction = sortedPredictions[0];
       baseData['Tipo de Iluminaria (sugerido)'] = bestPrediction ? extractTipoFromLabel(bestPrediction.class) : 'N/A';
