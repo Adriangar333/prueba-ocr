@@ -8,18 +8,10 @@ interface UrlImageUploaderProps {
 }
 
 const UrlImageUploader: React.FC<UrlImageUploaderProps> = ({ onFilesCreated, isProcessing }) => {
-  const [urls, setUrls] = useState({
-    panoramica: '',
-    codigo: '',
-    ficha: '',
-  });
+  const [urls, setUrls] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  const handleUrlChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const { name, value } = e.target;
-    setUrls(prev => ({ ...prev, [name]: value }));
-  };
 
   const getDirectDownloadUrl = (originalUrl: string): string | null => {
     if (originalUrl && typeof originalUrl === 'string' && originalUrl.includes('drive.google.com')) {
@@ -40,9 +32,7 @@ const UrlImageUploader: React.FC<UrlImageUploaderProps> = ({ onFilesCreated, isP
   };
 
   const handleLoadImages = useCallback(async () => {
-    const urlsToFetch = Object.entries(urls)
-      .filter(([, url]) => url.trim() !== '')
-      .map(([key, url]) => ({ key, url }));
+    const urlsToFetch = urls.split('\n').filter(url => url.trim() !== '');
 
     if (urlsToFetch.length === 0) {
       setError('Por favor, introduce al menos una URL.');
@@ -71,7 +61,7 @@ const UrlImageUploader: React.FC<UrlImageUploaderProps> = ({ onFilesCreated, isP
     const CORS_PROXY_PREFIX = "https://images.weserv.nl/?url=";
 
     try {
-      const filePromises = urlsToFetch.map(async ({ url, key }) => {
+      const filePromises = urlsToFetch.map(async (url, index) => {
         const downloadUrl = getDirectDownloadUrl(url);
         if (!downloadUrl) {
           throw new Error(`URL inválida o no es de Google Drive: ${url}`);
@@ -92,13 +82,13 @@ const UrlImageUploader: React.FC<UrlImageUploaderProps> = ({ onFilesCreated, isP
           throw new Error(`El proxy devolvió un error para la URL: ${url}. Verifica el enlace.`);
         }
 
-        const fileName = `gdrive_${key}_${new Date().getTime()}.${blob.type.split('/')[1] || 'jpg'}`;
+        const fileName = `gdrive_${index}_${new Date().getTime()}.${blob.type.split('/')[1] || 'jpg'}`;
         return new File([blob], fileName, { type: blob.type });
       });
 
       const files = await Promise.all(filePromises);
-      onFilesCreated(files, urlsToFetch.map(u => u.url));
-      setUrls({ panoramica: '', codigo: '', ficha: '' });
+      onFilesCreated(files, urlsToFetch);
+      setUrls('');
 
     } catch (err: any) {
       if (err.name === 'AbortError') {
@@ -122,31 +112,12 @@ const UrlImageUploader: React.FC<UrlImageUploaderProps> = ({ onFilesCreated, isP
         </div>
         
         <div className="space-y-4">
-          <input
-            type="text"
-            name="panoramica"
-            value={urls.panoramica}
-            onChange={handleUrlChange}
-            placeholder="URL de foto panorámica"
-            className="w-full px-3 py-2 bg-gray-700 border border-gray-600 rounded-md text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
-            disabled={isLoading}
-          />
-          <input
-            type="text"
-            name="codigo"
-            value={urls.codigo}
-            onChange={handleUrlChange}
-            placeholder="URL de foto de código"
-            className="w-full px-3 py-2 bg-gray-700 border border-gray-600 rounded-md text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
-            disabled={isLoading}
-          />
-          <input
-            type="text"
-            name="ficha"
-            value={urls.ficha}
-            onChange={handleUrlChange}
-            placeholder="URL de foto de ficha"
-            className="w-full px-3 py-2 bg-gray-700 border border-gray-600 rounded-md text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
+          <textarea
+            name="urls"
+            value={urls}
+            onChange={(e) => setUrls(e.target.value)}
+            placeholder="Pega aquí las URLs de las imágenes, una por línea..."
+            className="w-full h-32 px-3 py-2 bg-gray-700 border border-gray-600 rounded-md text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
             disabled={isLoading}
           />
         </div>
