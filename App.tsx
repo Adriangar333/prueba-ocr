@@ -424,7 +424,7 @@ const App: React.FC = () => {
 
     const dataToExport = imagesToExport.map(image => {
       const baseData: { [key: string]: any } = {
-        'Nombre de Archivo': image.file.name,
+        'Nombre de Archivo': image.sourceUrl || image.file.name,
         'Codigo Extraido': image.extractedResult?.extractedCode || 'N/A',
         'Status': image.status,
       };
