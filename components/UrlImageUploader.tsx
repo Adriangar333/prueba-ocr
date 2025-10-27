@@ -77,12 +77,26 @@ const UrlImageUploader: React.FC<UrlImageUploaderProps> = ({ onFilesCreated, isP
           throw new Error(`Error al descargar la imagen de ${url}. Status: ${response.status}`);
         }
         
+        const contentDisposition = response.headers.get('content-disposition');
+        let originalFileName: string | null = null;
+        if (contentDisposition) {
+          const fileNameMatch = contentDisposition.match(/filename="([^"]+)"/);
+          if (fileNameMatch && fileNameMatch[1]) {
+            try {
+              originalFileName = decodeURIComponent(fileNameMatch[1]);
+            } catch (e) {
+              originalFileName = fileNameMatch[1];
+            }
+          }
+        }
+
         const blob = await response.blob();
         if (blob.type === 'text/html') { // The proxy might return an error page
           throw new Error(`El proxy devolvió un error para la URL: ${url}. Verifica el enlace.`);
         }
 
-        const fileName = `gdrive_${index}_${new Date().getTime()}.${blob.type.split('/')[1] || 'jpg'}`;
+        const fallbackName = url.replace(/[\\/:*?"<>|]/g, '_');
+        const fileName = originalFileName || fallbackName;
         return new File([blob], fileName, { type: blob.type });
       });
 
